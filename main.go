@@ -1,9 +1,12 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"github.com/urfave/cli/v2"
 	"gorestapi/config"
+	"gorestapi/database/migration"
 	"gorestapi/routes"
+	"log"
 	"os"
 )
 
@@ -11,10 +14,29 @@ var (
 	db = config.SetUp()
 )
 
+func InitialCommand() {
+	app := &cli.App{
+		Commands: []*cli.Command{
+			{
+				Name: "db:migrate",
+				Action: func(cli *cli.Context) error {
+					fmt.Println("Hello friend!")
+					db.AutoMigrate(&migration.User{})
+					return nil
+				},
+			},
+		},
+	}
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	defer config.CloseDatabase(db)
 
-	routeMain := gin.Default()
-	routes.RouteInit(routeMain.Group("rest"))
-	routeMain.Run(os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT"))
+	InitialCommand()
+
+	r := routes.Router()
+	r.Run(os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT"))
 }
