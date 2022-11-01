@@ -1,4 +1,4 @@
-package user
+package model
 
 type UserModel struct {
 	ID      uint   `gorm:"primaryKey"`

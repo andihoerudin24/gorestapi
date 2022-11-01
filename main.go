@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/urfave/cli/v2"
 	"gorestapi/config"
 	"gorestapi/database/migration"
@@ -20,7 +19,6 @@ func InitialCommand() {
 			{
 				Name: "db:migrate",
 				Action: func(cli *cli.Context) error {
-					fmt.Println("Hello friend!")
 					db.AutoMigrate(&migration.User{})
 					return nil
 				},
