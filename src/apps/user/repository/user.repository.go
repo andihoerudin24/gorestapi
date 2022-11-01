@@ -7,6 +7,7 @@ import (
 
 type UserRepository interface {
 	GetAllUser() *[]model.UserModel
+	CreateUser(userModel model.UserModel) (model.UserModel, error)
 }
 
 type userRepository struct {
@@ -24,4 +25,9 @@ func (db *userRepository) GetAllUser() *[]model.UserModel {
 		return nil
 	}
 	return &userModel
+}
+
+func (db *userRepository) CreateUser(userModel model.UserModel) (model.UserModel, error) {
+	err := db.connection.Table("users").Create(&userModel).Error
+	return userModel, err
 }

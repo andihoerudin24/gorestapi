@@ -17,4 +17,5 @@ var (
 
 func UserRouter(router *gin.RouterGroup) {
 	router.GET("/all", UserController.GetAllUser)
+	router.POST("/create", UserController.CreateUser)
 }

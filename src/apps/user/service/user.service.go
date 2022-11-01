@@ -7,6 +7,7 @@ import (
 
 type UserService interface {
 	GetAllUser() *[]model.UserModel
+	CreateUser(userModel model.UserModel) (model.UserModel, error)
 }
 
 type userService struct {
@@ -23,4 +24,9 @@ func (u *userService) GetAllUser() *[]model.UserModel {
 		return nil
 	}
 	return dataUser
+}
+
+func (u *userService) CreateUser(userModel model.UserModel) (model.UserModel, error) {
+	createUser, err := u.userRepository.CreateUser(userModel)
+	return createUser, err
 }
