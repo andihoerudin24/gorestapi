@@ -6,8 +6,8 @@ import (
 )
 
 type UserService interface {
-	GetAllUser() *[]model.UserModel
-	CreateUser(userModel model.UserModel) (model.UserModel, error)
+	GetAllUser(perPage int64, offsets int64) (*[]model.UserModel, int64)
+	CreateUser(userModel model.UserModel) (*model.UserModel, error)
 }
 
 type userService struct {
@@ -18,15 +18,15 @@ func NewUserService(userRepository repository.UserRepository) *userService {
 	return &userService{userRepository: userRepository}
 }
 
-func (u *userService) GetAllUser() *[]model.UserModel {
-	dataUser := u.userRepository.GetAllUser()
+func (u *userService) GetAllUser(perPage int64, offsets int64) (*[]model.UserModel, int64) {
+	dataUser, totalrows := u.userRepository.GetAllUser(perPage, offsets)
 	if dataUser == nil {
-		return nil
+		return nil, totalrows
 	}
-	return dataUser
+	return dataUser, totalrows
 }
 
-func (u *userService) CreateUser(userModel model.UserModel) (model.UserModel, error) {
+func (u *userService) CreateUser(userModel model.UserModel) (*model.UserModel, error) {
 	createUser, err := u.userRepository.CreateUser(userModel)
 	return createUser, err
 }

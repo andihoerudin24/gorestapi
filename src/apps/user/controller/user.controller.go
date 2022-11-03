@@ -8,11 +8,13 @@ import (
 	"gorestapi/utils"
 	validator2 "gorestapi/validator"
 	"net/http"
+	"strconv"
 )
 
 type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
+	CountData(ctx *gin.Context)
 }
 
 type userController struct {
@@ -25,18 +27,33 @@ func NewUserController(services service.UserService) *userController {
 
 func (u *userController) GetAllUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
-	DataUser := u.services.GetAllUser()
+	page, _ := strconv.Atoi(ctx.Query("page"))
+	if page <= 0 {
+		page = 1
+	}
+	perPage := 5
+	DataUser, totalrows := u.services.GetAllUser(int64(perPage), int64(page))
+
+	pagination, _ := utils.GetPaginationLinks(utils.PaginationParams{
+		Path:        "user/all",
+		TotalRows:   totalrows,
+		PerPage:     int64(perPage),
+		CurrentPage: int64(page),
+	})
+
 	if DataUser == nil {
 		response.ResponseFormatter(http.StatusNotFound, "data not found", DataUser, nil)
 	}
 	response.ResponseFormatter(http.StatusOK, "List User", nil, gin.H{
-		"data": DataUser,
+		"data":       DataUser,
+		"pagination": pagination,
 	})
 }
 
 func (u *userController) CreateUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 	Uvalidation := validation.NewCreateUserValidation()
+
 	if err := Uvalidation.Bind(ctx); err != nil {
 		ResponError := validator2.BindErrors(err)
 		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", ResponError, nil)
@@ -62,5 +79,9 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 		"phone":   res.Phone,
 		"address": res.Address,
 	})
+
+}
+
+func (u *userController) CountData(ctx *gin.Context) {
 
 }

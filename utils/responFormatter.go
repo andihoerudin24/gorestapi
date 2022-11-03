@@ -15,7 +15,7 @@ type Response struct {
 	C *gin.Context
 }
 
-func (res Response) ResponseFormatter(code int, message string, err interface{}, result map[string]interface{}) {
+func (res Response) ResponseFormatter(code int, message string, err interface{}, result interface{}) {
 	ctx := res.C
 
 	if code < 400 {
