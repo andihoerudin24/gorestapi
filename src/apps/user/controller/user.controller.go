@@ -14,7 +14,6 @@ import (
 type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
-	CountData(ctx *gin.Context)
 }
 
 type userController struct {
@@ -79,9 +78,5 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 		"phone":   res.Phone,
 		"address": res.Address,
 	})
-
-}
-
-func (u *userController) CountData(ctx *gin.Context) {
 
 }
