@@ -9,6 +9,7 @@ type UserService interface {
 	GetAllUser(perPage int64, offsets int64) (*[]model.UserModel, int64)
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
 	FindById(id int64) (*model.UserModel, error)
+	Update(id int64, userModel model.UserModel) int64
 }
 
 type userService struct {
@@ -35,4 +36,9 @@ func (u *userService) CreateUser(userModel model.UserModel) (*model.UserModel, e
 func (u *userService) FindById(id int64) (*model.UserModel, error) {
 	FindUser, err := u.userRepository.FindById(id)
 	return FindUser, err
+}
+
+func (u *userService) Update(id int64, userModel model.UserModel) int64 {
+	RowsAffected := u.userRepository.Update(id, userModel)
+	return RowsAffected
 }

@@ -22,3 +22,22 @@ func (userValidation *CreateUserValidation) Bind(c *gin.Context) (err error) {
 	}
 	return
 }
+
+type UpdateUserValidation struct {
+	Name    string `json:"name"     form:"name" binding:"required"`
+	Email   string `json:"email"    form:"email" binding:"required,email"`
+	Address string `json:"address"  form:"address" binding:"required"`
+	Phone   string `json:"phone"    form:"phone" binding:"required"`
+}
+
+func NewUpdateUserValidation() *UpdateUserValidation {
+	return &UpdateUserValidation{}
+}
+
+func (updateUserValidation *UpdateUserValidation) Bind(c *gin.Context) (err error) {
+	err = c.ShouldBindJSON(&updateUserValidation)
+	if err != nil {
+		return err
+	}
+	return
+}

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"gorestapi/src/apps/user/model"
 	"gorm.io/gorm"
 )
@@ -9,6 +10,7 @@ type UserRepository interface {
 	GetAllUser(perPage int64, offset int64) (*[]model.UserModel, int64)
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
 	FindById(id int64) (*model.UserModel, error)
+	Update(id int64, userModel model.UserModel) int64
 }
 
 type userRepository struct {
@@ -51,4 +53,15 @@ func (db *userRepository) FindById(id int64) (*model.UserModel, error) {
 		return &data, nil
 	}
 
+}
+
+func (db *userRepository) Update(id int64, userModel model.UserModel) int64 {
+	res := db.connection.Debug().Table("users").Select("id", "name", "email", "address", "phone").Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
+		"name":    userModel.Name,
+		"email":   userModel.Email,
+		"address": userModel.Address,
+		"phone":   userModel.Phone,
+	})
+	fmt.Println("res", res.RowsAffected)
+	return res.RowsAffected
 }

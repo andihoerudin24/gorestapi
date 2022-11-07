@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorestapi/src/apps/user/model"
 	"gorestapi/src/apps/user/service"
@@ -15,6 +16,7 @@ type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
 	FindById(ctx *gin.Context)
+	Update()
 }
 
 type userController struct {
@@ -95,4 +97,35 @@ func (u *userController) FindById(ctx *gin.Context) {
 		return
 	}
 	response.ResponseFormatter(http.StatusOK, "User By Id", nil, responses)
+}
+
+func (u *userController) Update(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	id, errid := strconv.ParseInt(ctx.Param("id"), 0, 0)
+	if errid != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
+			"errors": errid,
+		})
+	}
+
+	responses, _ := u.services.FindById(id)
+	if responses == nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
+		return
+	}
+
+	Uvalidation := validation.NewUpdateUserValidation()
+	if err := Uvalidation.Bind(ctx); err != nil {
+		ResponError := validator2.BindErrors(err)
+		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", ResponError, nil)
+		return
+	}
+	newUsr := model.NewUserModel()
+	newUsr.ID = uint(id)
+	newUsr.Name = Uvalidation.Name
+	newUsr.Email = Uvalidation.Email
+	newUsr.Phone = Uvalidation.Phone
+	newUsr.Address = Uvalidation.Address
+	_ = u.services.Update(id, newUsr)
+	response.ResponseFormatter(http.StatusOK, fmt.Sprintf("sukses update data with id = %s", strconv.Itoa(int(id))), nil, newUsr)
 }
