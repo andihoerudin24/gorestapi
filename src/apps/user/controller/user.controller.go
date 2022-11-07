@@ -14,6 +14,7 @@ import (
 type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
+	FindById(ctx *gin.Context)
 }
 
 type userController struct {
@@ -78,5 +79,21 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 		"phone":   res.Phone,
 		"address": res.Address,
 	})
+}
 
+func (u *userController) FindById(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	id, errid := strconv.ParseInt(ctx.Param("id"), 0, 0)
+	if errid != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
+			"errors": errid,
+		})
+	}
+	responses, err := u.services.FindById(id)
+	if err != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "data not found", err.Error(), gin.H{
+			"errors": err,
+		})
+	}
+	response.ResponseFormatter(http.StatusOK, "User By Id", nil, responses)
 }

@@ -8,6 +8,7 @@ import (
 type UserRepository interface {
 	GetAllUser(perPage int64, offset int64) (*[]model.UserModel, int64)
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
+	FindById(id int64) (*model.UserModel, error)
 }
 
 type userRepository struct {
@@ -35,4 +36,19 @@ func (db *userRepository) GetAllUser(perPage int64, offsets int64) (*[]model.Use
 func (db *userRepository) CreateUser(userModel model.UserModel) (*model.UserModel, error) {
 	err := db.connection.Table("users").Create(&userModel).Error
 	return &userModel, err
+}
+
+func (db *userRepository) FindById(id int64) (*model.UserModel, error) {
+	var data model.UserModel
+	result := map[string]interface{}{}
+	res := db.connection.Debug().Table("users").Where("deleted_at IS NULL AND id = ?", id).Find(&data)
+	result = map[string]interface{}{
+		"data": data.ID,
+	}
+	if result["data"].(uint) == 0 {
+		return nil, res.Error
+	} else {
+		return &data, nil
+	}
+
 }

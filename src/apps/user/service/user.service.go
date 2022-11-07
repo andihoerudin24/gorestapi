@@ -8,6 +8,7 @@ import (
 type UserService interface {
 	GetAllUser(perPage int64, offsets int64) (*[]model.UserModel, int64)
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
+	FindById(id int64) (*model.UserModel, error)
 }
 
 type userService struct {
@@ -29,4 +30,9 @@ func (u *userService) GetAllUser(perPage int64, offsets int64) (*[]model.UserMod
 func (u *userService) CreateUser(userModel model.UserModel) (*model.UserModel, error) {
 	createUser, err := u.userRepository.CreateUser(userModel)
 	return createUser, err
+}
+
+func (u *userService) FindById(id int64) (*model.UserModel, error) {
+	FindUser, err := u.userRepository.FindById(id)
+	return FindUser, err
 }
