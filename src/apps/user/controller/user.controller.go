@@ -89,11 +89,10 @@ func (u *userController) FindById(ctx *gin.Context) {
 			"errors": errid,
 		})
 	}
-	responses, err := u.services.FindById(id)
-	if err != nil {
-		response.ResponseFormatter(http.StatusInternalServerError, "data not found", err.Error(), gin.H{
-			"errors": err,
-		})
+	responses, _ := u.services.FindById(id)
+	if responses == nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
+		return
 	}
 	response.ResponseFormatter(http.StatusOK, "User By Id", nil, responses)
 }
