@@ -23,14 +23,32 @@ func NewUserRepository(connection *gorm.DB) *userRepository {
 func (db *userRepository) GetAllUser(perPage int64, offsets int64) (*[]model.UserModel, int64) {
 	var userModel []model.UserModel
 	var count int64
+
 	errs := db.connection.Table("users").Count(&count).Error
+
+	var datares []interface{}
+
 	if errs != nil {
 		return nil, 0
 	}
-	res := db.connection.Table("users").Where("deleted_at IS NULL").Select("id", "name", "email", "address", "phone").Limit(int(perPage)).Offset(int(offsets)).Scan(&userModel)
+
+	if count <= 5 {
+		offsets = 0
+	}
+
+	res := db.connection.Table("users").Where("deleted_at IS NULL").Select("id", "name", "email", "address", "phone", "image").Limit(int(perPage)).Offset(int(offsets)).Scan(&userModel)
+
 	if res == nil {
 		return nil, 1
 	}
+
+	for index := range userModel {
+		datares = append(datares, map[string]interface{}{
+			"id":   userModel[index].ID,
+			"name": userModel[index].Name,
+		})
+	}
+
 	return &userModel, count
 }
 

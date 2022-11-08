@@ -1,14 +1,18 @@
 package controller
 
 import (
+	_ "embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorestapi/src/apps/user/model"
 	"gorestapi/src/apps/user/service"
 	"gorestapi/src/apps/user/validation"
 	"gorestapi/utils"
 	validator2 "gorestapi/validator"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 )
@@ -17,7 +21,8 @@ type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
 	FindById(ctx *gin.Context)
-	Update()
+	Update(ctx *gin.Context)
+	UploadImage(ctx *gin.Context)
 }
 
 type userController struct {
@@ -30,6 +35,7 @@ func NewUserController(services service.UserService) *userController {
 
 func (u *userController) GetAllUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
+	var pagination interface{}
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	if page <= 0 {
 		page = 1
@@ -37,18 +43,39 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 	perPage := 5
 	DataUser, totalrows := u.services.GetAllUser(int64(perPage), int64(page))
 
-	pagination, _ := utils.GetPaginationLinks(utils.PaginationParams{
+	pagination, _ = utils.GetPaginationLinks(utils.PaginationParams{
 		Path:        "user/all",
 		TotalRows:   totalrows,
 		PerPage:     int64(perPage),
 		CurrentPage: int64(page),
 	})
 
-	if DataUser == nil {
+	if len(*DataUser) == 0 {
 		response.ResponseFormatter(http.StatusNotFound, "data not found", DataUser, nil)
+		return
 	}
+
+	var dataresponse []interface{}
+	var images string
+
+	for _, value := range *DataUser {
+		if value.Image != "" {
+			images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + "/" + os.Getenv("UPLOADDIR") + "/" + value.Image
+		} else {
+			images = ""
+		}
+		dataresponse = append(dataresponse, map[string]interface{}{
+			"id":      value.ID,
+			"name":    value.Name,
+			"phone":   value.Phone,
+			"email":   value.Email,
+			"address": value.Address,
+			"image":   images,
+		})
+	}
+
 	response.ResponseFormatter(http.StatusOK, "List User", nil, gin.H{
-		"data":       DataUser,
+		"data":       dataresponse,
 		"pagination": pagination,
 	})
 }
@@ -139,4 +166,20 @@ func (u *userController) Update(ctx *gin.Context) {
 	fmt.Println("updData", updData)
 
 	response.ResponseFormatter(http.StatusOK, fmt.Sprintf("sukses update data with id = %s", strconv.Itoa(int(id))), nil, updData)
+}
+
+func (u *userController) UploadImage(ctx *gin.Context) {
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.String(http.StatusBadRequest, "get form err: %s", err.Error())
+		return
+	}
+	newFileName := uuid.New().String() + filepath.Ext(file.Filename)
+	path := os.Getenv("UPLOADDIR") + "/" + newFileName
+	if err := ctx.SaveUploadedFile(file, path); err != nil {
+		ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+		return
+	}
+
+	ctx.String(http.StatusOK, "File %s uploaded successfully", file.Filename)
 }

@@ -36,5 +36,6 @@ func main() {
 	InitialCommand()
 
 	r := routes.Router()
+
 	r.Run(os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT"))
 }

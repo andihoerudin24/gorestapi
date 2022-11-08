@@ -11,6 +11,7 @@ type User struct {
 	Email     string `json:"email"`
 	Address   string `json:"address"`
 	Phone     string `json:"phone"`
+	Image     string `json:"image"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
