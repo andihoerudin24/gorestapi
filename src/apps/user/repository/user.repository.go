@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"gorestapi/src/apps/user/model"
 	"gorm.io/gorm"
 )
@@ -56,12 +55,11 @@ func (db *userRepository) FindById(id int64) (*model.UserModel, error) {
 }
 
 func (db *userRepository) Update(id int64, userModel model.UserModel) int64 {
-	res := db.connection.Debug().Table("users").Select("id", "name", "email", "address", "phone").Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
+	res := db.connection.Model(&userModel).Select("id", "name", "email", "address", "phone").Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
 		"name":    userModel.Name,
 		"email":   userModel.Email,
 		"address": userModel.Address,
 		"phone":   userModel.Phone,
 	})
-	fmt.Println("res", res.RowsAffected)
 	return res.RowsAffected
 }

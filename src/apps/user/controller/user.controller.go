@@ -9,6 +9,7 @@ import (
 	"gorestapi/utils"
 	validator2 "gorestapi/validator"
 	"net/http"
+	"reflect"
 	"strconv"
 )
 
@@ -127,5 +128,15 @@ func (u *userController) Update(ctx *gin.Context) {
 	newUsr.Phone = Uvalidation.Phone
 	newUsr.Address = Uvalidation.Address
 	_ = u.services.Update(id, newUsr)
-	response.ResponseFormatter(http.StatusOK, fmt.Sprintf("sukses update data with id = %s", strconv.Itoa(int(id))), nil, newUsr)
+
+	updData := map[string]interface{}{}
+	v := reflect.ValueOf(newUsr)
+	typeOfV := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		updData[typeOfV.Field(i).Name] = v.Field(i).Interface()
+	}
+	delete(updData, "BaseModel")
+	fmt.Println("updData", updData)
+
+	response.ResponseFormatter(http.StatusOK, fmt.Sprintf("sukses update data with id = %s", strconv.Itoa(int(id))), nil, updData)
 }
