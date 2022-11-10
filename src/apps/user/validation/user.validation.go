@@ -2,13 +2,15 @@ package validation
 
 import (
 	"github.com/gin-gonic/gin"
+	"mime/multipart"
 )
 
 type CreateUserValidation struct {
-	Name    string `json:"name"   form:"name" binding:"required"`
-	Email   string `json:"email"  form:"email" binding:"required,email"`
-	Address string `json:"address" form:"address" binding:"required"`
-	Phone   string `json:"phone" form:"phone" binding:"required"`
+	Name    string                `json:"name"    form:"name"    binding:"required"`
+	Email   string                `json:"email"   form:"email"   binding:"required,email"`
+	Address string                `json:"address" form:"address" binding:"required"`
+	Phone   string                `json:"phone"   form:"phone"   binding:"required"`
+	Image   *multipart.FileHeader `json:"image"   form:"image"`
 }
 
 func NewCreateUserValidation() *CreateUserValidation {
@@ -16,7 +18,7 @@ func NewCreateUserValidation() *CreateUserValidation {
 }
 
 func (userValidation *CreateUserValidation) Bind(c *gin.Context) (err error) {
-	err = c.ShouldBindJSON(&userValidation)
+	err = c.ShouldBind(&userValidation)
 	if err != nil {
 		return err
 	}
@@ -24,10 +26,11 @@ func (userValidation *CreateUserValidation) Bind(c *gin.Context) (err error) {
 }
 
 type UpdateUserValidation struct {
-	Name    string `json:"name"     form:"name" binding:"required"`
-	Email   string `json:"email"    form:"email" binding:"required,email"`
-	Address string `json:"address"  form:"address" binding:"required"`
-	Phone   string `json:"phone"    form:"phone" binding:"required"`
+	Name    string                `json:"name"     form:"name" binding:"required"`
+	Email   string                `json:"email"    form:"email" binding:"required,email"`
+	Address string                `json:"address"  form:"address" binding:"required"`
+	Phone   string                `json:"phone"    form:"phone" binding:"required"`
+	Image   *multipart.FileHeader `json:"image"    form:"image"`
 }
 
 func NewUpdateUserValidation() *UpdateUserValidation {
@@ -35,7 +38,7 @@ func NewUpdateUserValidation() *UpdateUserValidation {
 }
 
 func (updateUserValidation *UpdateUserValidation) Bind(c *gin.Context) (err error) {
-	err = c.ShouldBindJSON(&updateUserValidation)
+	err = c.ShouldBind(&updateUserValidation)
 	if err != nil {
 		return err
 	}

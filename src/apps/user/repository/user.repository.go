@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"gorestapi/src/apps/user/model"
 	"gorm.io/gorm"
 )
@@ -24,36 +25,26 @@ func (db *userRepository) GetAllUser(perPage int64, offsets int64) (*[]model.Use
 	var userModel []model.UserModel
 	var count int64
 
-	errs := db.connection.Table("users").Count(&count).Error
+	errs := db.connection.Debug().Table("users").Count(&count).Error
 
-	var datares []interface{}
+	fmt.Println("datacount", count)
 
 	if errs != nil {
 		return nil, 0
 	}
+	offsets = (offsets - 1) * perPage
 
-	if count <= 5 {
-		offsets = 0
-	}
-
-	res := db.connection.Table("users").Where("deleted_at IS NULL").Select("id", "name", "email", "address", "phone", "image").Limit(int(perPage)).Offset(int(offsets)).Scan(&userModel)
+	res := db.connection.Table("users").Debug().Where("deleted_at IS NULL").Select("id", "name", "email", "address", "phone", "image").Limit(int(perPage)).Offset(int(offsets)).Scan(&userModel)
 
 	if res == nil {
 		return nil, 1
-	}
-
-	for index := range userModel {
-		datares = append(datares, map[string]interface{}{
-			"id":   userModel[index].ID,
-			"name": userModel[index].Name,
-		})
 	}
 
 	return &userModel, count
 }
 
 func (db *userRepository) CreateUser(userModel model.UserModel) (*model.UserModel, error) {
-	err := db.connection.Table("users").Create(&userModel).Error
+	err := db.connection.Debug().Table("users").Create(&userModel).Error
 	return &userModel, err
 }
 
@@ -73,11 +64,16 @@ func (db *userRepository) FindById(id int64) (*model.UserModel, error) {
 }
 
 func (db *userRepository) Update(id int64, userModel model.UserModel) int64 {
-	res := db.connection.Model(&userModel).Select("id", "name", "email", "address", "phone").Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
+	var image string
+	if userModel.Image != "" {
+		image = "image"
+	}
+	res := db.connection.Model(&userModel).Select("id", "name", "email", "address", "phone", image).Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
 		"name":    userModel.Name,
 		"email":   userModel.Email,
 		"address": userModel.Address,
 		"phone":   userModel.Phone,
+		"image":   userModel.Image,
 	})
 	return res.RowsAffected
 }

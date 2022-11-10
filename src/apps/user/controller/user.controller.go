@@ -2,6 +2,7 @@ package controller
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,14 +16,17 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 )
+
+const UPLOADDIR = "user"
+const URLSTATIC = "/api/v1/user"
 
 type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
 	FindById(ctx *gin.Context)
 	Update(ctx *gin.Context)
-	UploadImage(ctx *gin.Context)
 }
 
 type userController struct {
@@ -60,7 +64,7 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 
 	for _, value := range *DataUser {
 		if value.Image != "" {
-			images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + "/" + os.Getenv("UPLOADDIR") + "/" + value.Image
+			images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + value.Image
 		} else {
 			images = ""
 		}
@@ -83,8 +87,17 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 func (u *userController) CreateUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 	Uvalidation := validation.NewCreateUserValidation()
+	newFileName, errorFilename := upload(ctx)
+
+	if errorFilename != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "invalid image", gin.H{
+			"image": fmt.Sprintf("%s", errorFilename),
+		}, nil)
+		return
+	}
 
 	if err := Uvalidation.Bind(ctx); err != nil {
+		fmt.Println("errr", err)
 		ResponError := validator2.BindErrors(err)
 		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", ResponError, nil)
 		return
@@ -95,6 +108,7 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 	newUsr.Email = Uvalidation.Email
 	newUsr.Phone = Uvalidation.Phone
 	newUsr.Address = Uvalidation.Address
+	newUsr.Image = fmt.Sprintf("%v", newFileName)
 	res, err := u.services.CreateUser(newUsr)
 
 	if err != nil {
@@ -108,11 +122,13 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 		"name":    res.Name,
 		"phone":   res.Phone,
 		"address": res.Address,
+		"image":   res.Image,
 	})
 }
 
 func (u *userController) FindById(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
+	var images string
 	id, errid := strconv.ParseInt(ctx.Param("id"), 0, 0)
 	if errid != nil {
 		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
@@ -120,11 +136,25 @@ func (u *userController) FindById(ctx *gin.Context) {
 		})
 	}
 	responses, _ := u.services.FindById(id)
+	if responses.Image != "" {
+		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + responses.Image
+	} else {
+		images = ""
+	}
+	dataresponse := map[string]interface{}{
+		"id":      responses.ID,
+		"email":   responses.Email,
+		"name":    responses.Name,
+		"phone":   responses.Phone,
+		"address": responses.Address,
+		"image":   images,
+	}
 	if responses == nil {
 		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
 		return
 	}
-	response.ResponseFormatter(http.StatusOK, "User By Id", nil, responses)
+
+	response.ResponseFormatter(http.StatusOK, "User By Id", nil, dataresponse)
 }
 
 func (u *userController) Update(ctx *gin.Context) {
@@ -142,9 +172,17 @@ func (u *userController) Update(ctx *gin.Context) {
 		return
 	}
 
+	newfilename, errorfilename := upload(ctx)
+	if errorfilename != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "Invalid Image", gin.H{
+			"image": fmt.Sprintf("%s", errorfilename),
+		}, nil)
+	}
+
 	Uvalidation := validation.NewUpdateUserValidation()
 	if err := Uvalidation.Bind(ctx); err != nil {
 		ResponError := validator2.BindErrors(err)
+
 		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", ResponError, nil)
 		return
 	}
@@ -154,32 +192,33 @@ func (u *userController) Update(ctx *gin.Context) {
 	newUsr.Email = Uvalidation.Email
 	newUsr.Phone = Uvalidation.Phone
 	newUsr.Address = Uvalidation.Address
+	newUsr.Image = fmt.Sprintf("%v", newfilename)
 	_ = u.services.Update(id, newUsr)
 
 	updData := map[string]interface{}{}
 	v := reflect.ValueOf(newUsr)
 	typeOfV := v.Type()
 	for i := 0; i < v.NumField(); i++ {
-		updData[typeOfV.Field(i).Name] = v.Field(i).Interface()
+		updData[strings.ToLower(typeOfV.Field(i).Name)] = v.Field(i).Interface()
 	}
-	delete(updData, "BaseModel")
-	fmt.Println("updData", updData)
-
+	delete(updData, "basemodel")
 	response.ResponseFormatter(http.StatusOK, fmt.Sprintf("sukses update data with id = %s", strconv.Itoa(int(id))), nil, updData)
 }
 
-func (u *userController) UploadImage(ctx *gin.Context) {
-	file, err := ctx.FormFile("file")
-	if err != nil {
-		ctx.String(http.StatusBadRequest, "get form err: %s", err.Error())
-		return
+func upload(ctx *gin.Context) (interface{}, error) {
+	var newFileName string
+	file, _ := ctx.FormFile("image")
+	if file != nil {
+		acceptImage := utils.AcceptImage(file.Header.Get("Content-Type"))
+		if acceptImage != nil {
+			return nil, errors.New(fmt.Sprintf("%s", acceptImage))
+		} else {
+			newFileName = uuid.New().String() + filepath.Ext(file.Filename)
+			path := os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + newFileName
+			if err := ctx.SaveUploadedFile(file, path); err != nil {
+				ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+			}
+		}
 	}
-	newFileName := uuid.New().String() + filepath.Ext(file.Filename)
-	path := os.Getenv("UPLOADDIR") + "/" + newFileName
-	if err := ctx.SaveUploadedFile(file, path); err != nil {
-		ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
-		return
-	}
-
-	ctx.String(http.StatusOK, "File %s uploaded successfully", file.Filename)
+	return newFileName, nil
 }
