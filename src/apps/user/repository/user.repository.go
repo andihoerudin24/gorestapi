@@ -11,6 +11,7 @@ type UserRepository interface {
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
 	FindById(id int64) (*model.UserModel, error)
 	Update(id int64, userModel model.UserModel) int64
+	Delete(id int64) error
 }
 
 type userRepository struct {
@@ -76,4 +77,14 @@ func (db *userRepository) Update(id int64, userModel model.UserModel) int64 {
 		"image":   userModel.Image,
 	})
 	return res.RowsAffected
+}
+
+func (db *userRepository) Delete(id int64) error {
+	usermodel := model.NewUserModel()
+	usermodel.ID = uint(id)
+	if err := db.connection.Debug().Where("id = ?", id).First(&usermodel).Error; err != nil {
+		return err
+	}
+	ress := db.connection.Debug().Delete(&usermodel)
+	return ress.Error
 }

@@ -27,6 +27,7 @@ type UserController interface {
 	CreateUser(ctx *gin.Context)
 	FindById(ctx *gin.Context)
 	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 type userController struct {
@@ -77,7 +78,6 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 			"image":   images,
 		})
 	}
-
 	response.ResponseFormatter(http.StatusOK, "List User", nil, gin.H{
 		"data":       dataresponse,
 		"pagination": pagination,
@@ -115,6 +115,7 @@ func (u *userController) CreateUser(ctx *gin.Context) {
 		response.ResponseFormatter(http.StatusInternalServerError, "Failed Save Data", err.Error(), gin.H{
 			"errors": err.Error(),
 		})
+		return
 	}
 
 	response.ResponseFormatter(http.StatusOK, "Success Save Data", nil, gin.H{
@@ -221,4 +222,20 @@ func upload(ctx *gin.Context) (interface{}, error) {
 		}
 	}
 	return newFileName, nil
+}
+
+func (u *userController) Delete(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	IdUser, errid := strconv.Atoi(ctx.Param("id"))
+	if errid != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
+			"errors": errid,
+		})
+	}
+	data := u.services.Delete(int64(IdUser))
+	if data != nil {
+		response.ResponseFormatter(http.StatusNotFound, fmt.Sprintf("%v", data), nil, nil)
+		return
+	}
+	response.ResponseFormatter(http.StatusOK, "Success Delete Data", nil, nil)
 }

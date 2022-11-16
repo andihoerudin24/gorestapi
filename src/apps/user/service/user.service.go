@@ -10,6 +10,7 @@ type UserService interface {
 	CreateUser(userModel model.UserModel) (*model.UserModel, error)
 	FindById(id int64) (*model.UserModel, error)
 	Update(id int64, userModel model.UserModel) int64
+	Delete(id int64) error
 }
 
 type userService struct {
@@ -41,4 +42,9 @@ func (u *userService) FindById(id int64) (*model.UserModel, error) {
 func (u *userService) Update(id int64, userModel model.UserModel) int64 {
 	RowsAffected := u.userRepository.Update(id, userModel)
 	return RowsAffected
+}
+
+func (u *userService) Delete(id int64) error {
+	Delete := u.userRepository.Delete(id)
+	return Delete
 }
