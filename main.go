@@ -20,6 +20,7 @@ func InitialCommand() {
 				Name: "db:migrate",
 				Action: func(cli *cli.Context) error {
 					db.AutoMigrate(&migration.User{})
+					db.AutoMigrate(&migration.Post{})
 					return nil
 				},
 			},
