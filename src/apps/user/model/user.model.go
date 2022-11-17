@@ -1,6 +1,8 @@
 package model
 
-import "gorestapi/utils"
+import (
+	"gorestapi/utils"
+)
 
 type UserModel struct {
 	Name    string `json:"name"`

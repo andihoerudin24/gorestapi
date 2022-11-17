@@ -6,6 +6,7 @@ import (
 )
 
 type BaseModel struct {
+	gorm.Model
 	ID        uint `gorm:"primaryKey" json:"id"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -2,7 +2,8 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"gorestapi/src/apps/user/router"
+	postrouter "gorestapi/src/apps/post/router"
+	userrouter "gorestapi/src/apps/user/router"
 )
 
 func Router() *gin.Engine {
@@ -10,8 +11,9 @@ func Router() *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-		router.UserRouter(v1.Group("/user"))
-	}
+		userrouter.UserRouter(v1.Group("/user"))
+		postrouter.PostRouter(v1.Group("/post"))
 
+	}
 	return r
 }

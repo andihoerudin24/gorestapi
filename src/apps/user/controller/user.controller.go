@@ -137,6 +137,12 @@ func (u *userController) FindById(ctx *gin.Context) {
 		})
 	}
 	responses, _ := u.services.FindById(id)
+
+	if responses == nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
+		return
+	}
+
 	if responses.Image != "" {
 		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + responses.Image
 	} else {
@@ -149,10 +155,6 @@ func (u *userController) FindById(ctx *gin.Context) {
 		"phone":   responses.Phone,
 		"address": responses.Address,
 		"image":   images,
-	}
-	if responses == nil {
-		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
-		return
 	}
 
 	response.ResponseFormatter(http.StatusOK, "User By Id", nil, dataresponse)
