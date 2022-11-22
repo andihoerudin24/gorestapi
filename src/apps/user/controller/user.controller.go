@@ -190,7 +190,7 @@ func (u *userController) Update(ctx *gin.Context) {
 		return
 	}
 	newUsr := model.NewUserModel()
-	newUsr.ID = uint(id)
+	newUsr.ID = int(id)
 	newUsr.Name = Uvalidation.Name
 	newUsr.Email = Uvalidation.Email
 	newUsr.Phone = Uvalidation.Phone

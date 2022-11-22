@@ -14,5 +14,5 @@ var (
 )
 
 func PostRouter(router *gin.RouterGroup) {
-	router.GET("/ping", PostController.GetAllPost)
+	router.GET("/all", PostController.GetAllPost)
 }

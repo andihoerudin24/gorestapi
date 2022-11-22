@@ -81,7 +81,7 @@ func (db *userRepository) Update(id int64, userModel model.UserModel) int64 {
 
 func (db *userRepository) Delete(id int64) error {
 	usermodel := model.NewUserModel()
-	usermodel.ID = uint(id)
+	usermodel.ID = int(id)
 	if err := db.connection.Debug().Where("id = ?", id).First(&usermodel).Error; err != nil {
 		return err
 	}

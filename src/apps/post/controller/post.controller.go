@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"gorestapi/src/apps/post/repository"
+	"gorestapi/src/apps/post/service"
+	"gorestapi/utils"
 	"net/http"
 )
 
@@ -12,19 +12,21 @@ type PostController interface {
 }
 
 type postController struct {
-	postrepository repository.PostRepository
+	postService service.PostService
 }
 
-func NewPostController(postRepository repository.PostRepository) *postController {
-	return &postController{postrepository: postRepository}
+func NewPostController(postRepository service.PostService) *postController {
+	return &postController{postService: postRepository}
 }
 
 func (p *postController) GetAllPost(ctx *gin.Context) {
-	res, err := p.postrepository.GetAllPost()
-	fmt.Println("rescontroller", res)
-	fmt.Println("err", err)
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+	response := utils.Response{C: ctx}
+	res, err := p.postService.GetAllPost()
+	if err == nil {
+		response.ResponseFormatter(http.StatusOK, "list data post", nil, res)
+		return
+	} else {
+		response.ResponseFormatter(http.StatusBadRequest, "error get data post", err.Error(), nil)
+		return
+	}
 }
