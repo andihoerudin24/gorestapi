@@ -15,4 +15,5 @@ var (
 
 func PostRouter(router *gin.RouterGroup) {
 	router.GET("/all", PostController.GetAllPost)
+	router.POST("/create", PostController.CreatePost)
 }

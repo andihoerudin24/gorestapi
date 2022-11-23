@@ -4,10 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	postrouter "gorestapi/src/apps/post/router"
 	userrouter "gorestapi/src/apps/user/router"
+	"gorestapi/utils"
 )
 
 func Router() *gin.Engine {
 	r := gin.Default()
+	r.ForwardedByClientIP = true
+	r.Use(utils.Logger_JSON("logger.log", true))
 
 	v1 := r.Group("/api/v1")
 	{

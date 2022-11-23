@@ -6,7 +6,7 @@ import (
 )
 
 type PostService interface {
-	GetAllPost() ([]response.PostResponse, error)
+	GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64)
 }
 
 type postService struct {
@@ -17,7 +17,7 @@ func NewPostService(repository repository.PostRepository) *postService {
 	return &postService{repository: repository}
 }
 
-func (p postService) GetAllPost() ([]response.PostResponse, error) {
-	postResponse, error := p.repository.GetAllPost()
-	return postResponse, error
+func (p postService) GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64) {
+	postResponse, error, count := p.repository.GetAllPost(perPage, Page)
+	return postResponse, error, count
 }
