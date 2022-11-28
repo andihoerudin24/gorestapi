@@ -5,12 +5,14 @@ import (
 	"gorestapi/config"
 	"gorestapi/src/apps/post/controller"
 	"gorestapi/src/apps/post/repository"
+	"gorestapi/src/apps/post/service"
 )
 
 var (
 	db             = config.SetUp()
 	PostRepository = repository.NewPostRepository(db)
-	PostController = controller.NewPostController(PostRepository)
+	PostService    = service.NewPostService(PostRepository)
+	PostController = controller.NewPostController(PostService)
 )
 
 func PostRouter(router *gin.RouterGroup) {

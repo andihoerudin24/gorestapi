@@ -1,12 +1,14 @@
 package repository
 
 import (
+	"gorestapi/src/apps/post/model"
 	"gorestapi/src/apps/post/response"
 	"gorm.io/gorm"
 )
 
 type PostRepository interface {
 	GetAllPost(perPage int64, Offset int64) ([]response.PostResponse, error, int64)
+	CreatePost(postModel model.PostModel) (*model.PostModel, error)
 }
 
 type postRepository struct {
@@ -35,4 +37,9 @@ func (p *postRepository) GetAllPost(perPage int64, Offset int64) ([]response.Pos
 		}
 	}
 	return responsePost, err, count
+}
+
+func (p *postRepository) CreatePost(postModel model.PostModel) (*model.PostModel, error) {
+	res := p.connection.Debug().Table("posts").Create(&postModel)
+	return &postModel, res.Error
 }

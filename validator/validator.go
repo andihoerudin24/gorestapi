@@ -18,6 +18,8 @@ func MsgForTag(tag string) string {
 		return "This field is required"
 	case "email":
 		return "Invalid email"
+	case "min":
+		return "failing there is a minimum of characters"
 	}
 	return ""
 }
