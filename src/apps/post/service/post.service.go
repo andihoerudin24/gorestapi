@@ -9,6 +9,7 @@ import (
 type PostService interface {
 	GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64)
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
+	FindById(id int) (*model.PostModel, error)
 }
 
 type postService struct {
@@ -26,5 +27,10 @@ func (p postService) GetAllPost(perPage int64, Page int64) ([]response.PostRespo
 
 func (p postService) CreatePost(postModel model.PostModel) (*model.PostModel, error) {
 	postResponse, err := p.repository.CreatePost(postModel)
+	return postResponse, err
+}
+
+func (p postService) FindById(id int) (*model.PostModel, error) {
+	postResponse, err := p.repository.FindById(id)
 	return postResponse, err
 }

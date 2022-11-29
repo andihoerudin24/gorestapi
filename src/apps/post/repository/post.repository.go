@@ -9,6 +9,7 @@ import (
 type PostRepository interface {
 	GetAllPost(perPage int64, Offset int64) ([]response.PostResponse, error, int64)
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
+	FindById(id int) (*model.PostModel, error)
 }
 
 type postRepository struct {
@@ -42,4 +43,14 @@ func (p *postRepository) GetAllPost(perPage int64, Offset int64) ([]response.Pos
 func (p *postRepository) CreatePost(postModel model.PostModel) (*model.PostModel, error) {
 	res := p.connection.Debug().Table("posts").Create(&postModel)
 	return &postModel, res.Error
+}
+
+func (p *postRepository) FindById(id int) (*model.PostModel, error) {
+	var datapost model.PostModel
+	res := p.connection.Debug().Table("posts").Where("id = ?", id).Find(&datapost)
+	if datapost.ID != 0 {
+		return &datapost, res.Error
+	}
+	return nil, nil
+
 }

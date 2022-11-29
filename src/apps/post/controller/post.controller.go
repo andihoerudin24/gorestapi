@@ -24,6 +24,7 @@ const URLSTATIC = "/api/v1/post"
 type PostController interface {
 	GetAllPost(ctx *gin.Context)
 	CreatePost(ctx *gin.Context)
+	FindById(ctx *gin.Context)
 }
 
 type postController struct {
@@ -112,6 +113,39 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	postResponse.Image = images
 	postResponse.UserId = int(resultInsert.UserID)
 	response.ResponseFormatter(http.StatusOK, "success save data", nil, postResponse)
+}
+
+func (p *postController) FindById(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	id, errid := strconv.ParseInt(ctx.Param("id"), 0, 0)
+	if errid != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
+			"errors": errid,
+		})
+	}
+	responseData, _ := p.postService.FindById(int(id))
+	if responseData == nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "data not found", "data not found", nil)
+		return
+	}
+
+	var images string
+
+	if responseData.Image != "" {
+		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + responseData.Image
+	} else {
+		images = ""
+	}
+
+	postResponse := postResponse.NewPostResponse()
+	postResponse.ID = responseData.ID
+	postResponse.Title = responseData.Title
+	postResponse.Image = images
+	postResponse.Content = responseData.Content
+	postResponse.Slug = responseData.Slug
+	postResponse.UserId = int(responseData.UserID)
+	response.ResponseFormatter(http.StatusOK, "Post By Id", nil, postResponse)
+
 }
 
 func upload(ctx *gin.Context) (interface{}, error) {
