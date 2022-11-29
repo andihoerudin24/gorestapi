@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"gorestapi/src/apps/post/model"
 	"gorestapi/src/apps/post/response"
 	"gorm.io/gorm"
@@ -37,7 +36,6 @@ func (p *postRepository) GetAllPost(perPage int64, Offset int64) ([]response.Pos
 			p.connection.ScanRows(rows, &responsePost)
 		}
 	}
-	fmt.Println("rows", responsePost)
 	return responsePost, err, count
 }
 

@@ -68,14 +68,13 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	postValidate := postValidation.NewCreatePostValidation()
 
 	if err := postValidate.Bind(ctx); err != nil {
-		fmt.Println("Err", err)
 		responseError := validator2.BindErrors(err)
 		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", responseError, nil)
 		return
 	}
 
 	newFile, errorFile := upload(ctx)
-	
+
 	if errorFile != nil {
 		response.ResponseFormatter(http.StatusInternalServerError, "Invalid Image", gin.H{
 			"image": fmt.Sprintf("%s", errorFile),
@@ -93,6 +92,13 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	dataPost.UserID = uint(postValidate.UserId)
 	resultInsert, err := p.postService.CreatePost(dataPost)
 
+	var images string
+	if resultInsert.Image != "" {
+		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + resultInsert.Image
+	} else {
+		images = ""
+	}
+
 	if err != nil {
 		response.ResponseFormatter(http.StatusInternalServerError, "Failed Save Data", err.Error(), nil)
 		return
@@ -103,7 +109,7 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	postResponse.Title = resultInsert.Title
 	postResponse.Content = resultInsert.Content
 	postResponse.Slug = resultInsert.Slug
-	postResponse.Image = resultInsert.Image
+	postResponse.Image = images
 	postResponse.UserId = int(resultInsert.UserID)
 	response.ResponseFormatter(http.StatusOK, "success save data", nil, postResponse)
 }
