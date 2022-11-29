@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorestapi/src/apps/post/model"
 	postResponse "gorestapi/src/apps/post/response"
 	"gorestapi/src/apps/post/service"
@@ -11,9 +13,13 @@ import (
 	validator2 "gorestapi/validator"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 )
+
+const UPLOADDIR = "postimage"
+const URLSTATIC = "/api/v1/post"
 
 type PostController interface {
 	GetAllPost(ctx *gin.Context)
@@ -60,18 +66,30 @@ func (p *postController) GetAllPost(ctx *gin.Context) {
 func (p *postController) CreatePost(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 	postValidate := postValidation.NewCreatePostValidation()
+
 	if err := postValidate.Bind(ctx); err != nil {
 		fmt.Println("Err", err)
 		responseError := validator2.BindErrors(err)
 		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", responseError, nil)
 		return
 	}
+
+	newFile, errorFile := upload(ctx)
+	
+	if errorFile != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "Invalid Image", gin.H{
+			"image": fmt.Sprintf("%s", errorFile),
+		}, nil)
+		return
+	}
+
 	var title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
 	resultTitle := title.ReplaceAllString(postValidate.Title, "")
 	dataPost := model.NewPostModel()
 	dataPost.Title = resultTitle
 	dataPost.Content = postValidate.Content
 	dataPost.Slug = postValidate.Slug
+	dataPost.Image = fmt.Sprintf("%v", newFile)
 	dataPost.UserID = uint(postValidate.UserId)
 	resultInsert, err := p.postService.CreatePost(dataPost)
 
@@ -87,6 +105,24 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	postResponse.Slug = resultInsert.Slug
 	postResponse.Image = resultInsert.Image
 	postResponse.UserId = int(resultInsert.UserID)
-
 	response.ResponseFormatter(http.StatusOK, "success save data", nil, postResponse)
+}
+
+func upload(ctx *gin.Context) (interface{}, error) {
+	var newFilename string
+	file, _ := ctx.FormFile("image")
+	if file != nil {
+		acceptImage := utils.AcceptImage(file.Header.Get("Content-Type"))
+		if acceptImage != nil {
+			return nil, errors.New(fmt.Sprintf("%s", acceptImage))
+		} else {
+			newFilename = uuid.New().String() + filepath.Ext(file.Filename)
+			path := os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + newFilename
+			if err := ctx.SaveUploadedFile(file, path); err != nil {
+				ctx.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+			}
+
+		}
+	}
+	return newFilename, nil
 }
