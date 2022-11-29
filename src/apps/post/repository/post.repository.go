@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"gorestapi/src/apps/post/model"
 	"gorestapi/src/apps/post/response"
 	"gorm.io/gorm"
@@ -30,12 +31,13 @@ func (p *postRepository) GetAllPost(perPage int64, Offset int64) ([]response.Pos
 
 	Offset = (Offset - 1) * perPage
 
-	rows, err := p.connection.Debug().Table("posts").Select("posts.title,posts.content,posts.slug,posts.image,users.name,users.id as user_id,users.phone").Joins("INNER JOIN users on users.id = posts.user_id").Limit(int(perPage)).Offset(int(Offset)).Rows()
+	rows, err := p.connection.Debug().Table("posts").Select("posts.id,posts.title,posts.content,posts.slug,posts.image,users.name,users.id as user_id,users.phone").Joins("INNER JOIN users on users.id = posts.user_id").Limit(int(perPage)).Offset(int(Offset)).Rows()
 	if err == nil {
 		for rows.Next() {
 			p.connection.ScanRows(rows, &responsePost)
 		}
 	}
+	fmt.Println("rows", responsePost)
 	return responsePost, err, count
 }
 
