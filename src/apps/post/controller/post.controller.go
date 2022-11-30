@@ -21,10 +21,13 @@ import (
 const UPLOADDIR = "postimage"
 const URLSTATIC = "/api/v1/post"
 
+var title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
+
 type PostController interface {
 	GetAllPost(ctx *gin.Context)
 	CreatePost(ctx *gin.Context)
 	FindById(ctx *gin.Context)
+	Update(ctx *gin.Context)
 }
 
 type postController struct {
@@ -83,7 +86,6 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 		return
 	}
 
-	var title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
 	resultTitle := title.ReplaceAllString(postValidate.Title, "")
 	dataPost := model.NewPostModel()
 	dataPost.Title = resultTitle
@@ -146,6 +148,48 @@ func (p *postController) FindById(ctx *gin.Context) {
 	postResponse.UserId = int(responseData.UserID)
 	response.ResponseFormatter(http.StatusOK, "Post By Id", nil, postResponse)
 
+}
+
+func (p *postController) Update(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	id, errid := strconv.ParseInt(ctx.Param("id"), 0, 0)
+
+	if errid != nil {
+		response.ResponseFormatter(http.StatusInternalServerError, "error id", errid, gin.H{
+			"errors": errid,
+		})
+		return
+	}
+
+	postValidate := postValidation.NewCreatePostValidation()
+	if err := postValidate.Bind(ctx); err != nil {
+		validator := validator2.BindErrors(err)
+		response.ResponseFormatter(http.StatusBadRequest, "Invalid Form", validator, nil)
+		return
+	}
+
+	postById, _ := p.postService.FindById(int(id))
+	if postById == nil {
+		response.ResponseFormatter(http.StatusNotFound, "data not found", nil, nil)
+		return
+	}
+
+	newFileName, errorFile := upload(ctx)
+	if errorFile != nil {
+		response.ResponseFormatter(http.StatusBadRequest, "Invalid Image", errorFile, nil)
+		return
+	}
+
+	resultTitle := title.ReplaceAllString(postValidate.Title, "")
+	newPostModel := model.NewPostModel()
+	newPostModel.ID = int(id)
+	newPostModel.Title = resultTitle
+	newPostModel.Content = postValidate.Content
+	newPostModel.Slug = postValidate.Slug
+	newPostModel.UserID = uint(postValidate.UserId)
+	newPostModel.Image = fmt.Sprintf("%v", newFileName)
+	_, postResponse := p.postService.Update(int(id), newPostModel)
+	response.ResponseFormatter(http.StatusOK, "Success Update Data", nil, postResponse)
 }
 
 func upload(ctx *gin.Context) (interface{}, error) {

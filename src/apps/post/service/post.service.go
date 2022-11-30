@@ -10,6 +10,7 @@ type PostService interface {
 	GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64)
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
 	FindById(id int) (*model.PostModel, error)
+	Update(id int, postModel model.PostModel) (int64, *response.PostResponse)
 }
 
 type postService struct {
@@ -20,17 +21,22 @@ func NewPostService(repository repository.PostRepository) *postService {
 	return &postService{repository: repository}
 }
 
-func (p postService) GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64) {
+func (p *postService) GetAllPost(perPage int64, Page int64) ([]response.PostResponse, error, int64) {
 	postResponse, error, count := p.repository.GetAllPost(perPage, Page)
 	return postResponse, error, count
 }
 
-func (p postService) CreatePost(postModel model.PostModel) (*model.PostModel, error) {
+func (p *postService) CreatePost(postModel model.PostModel) (*model.PostModel, error) {
 	postResponse, err := p.repository.CreatePost(postModel)
 	return postResponse, err
 }
 
-func (p postService) FindById(id int) (*model.PostModel, error) {
+func (p *postService) FindById(id int) (*model.PostModel, error) {
 	postResponse, err := p.repository.FindById(id)
 	return postResponse, err
+}
+
+func (p *postService) Update(id int, postModel model.PostModel) (int64, *response.PostResponse) {
+	postUpdate, postResponse := p.repository.Update(id, postModel)
+	return postUpdate, postResponse
 }

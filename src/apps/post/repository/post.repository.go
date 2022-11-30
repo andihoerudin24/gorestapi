@@ -10,6 +10,7 @@ type PostRepository interface {
 	GetAllPost(perPage int64, Offset int64) ([]response.PostResponse, error, int64)
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
 	FindById(id int) (*model.PostModel, error)
+	Update(id int, post model.PostModel) (int64, *response.PostResponse)
 }
 
 type postRepository struct {
@@ -52,5 +53,26 @@ func (p *postRepository) FindById(id int) (*model.PostModel, error) {
 		return &datapost, res.Error
 	}
 	return nil, nil
+}
 
+func (p *postRepository) Update(id int, post model.PostModel) (int64, *response.PostResponse) {
+	var image string
+	if post.Image != "" {
+		image = "image"
+	}
+	res := p.connection.Debug().Model(&post).Select("title", "content", "slug", image, "user_id").Where("id = ? AND deleted_at is null", id).Updates(map[string]interface{}{
+		"title":   post.Title,
+		"content": post.Content,
+		"slug":    post.Slug,
+		"image":   post.Image,
+		"user_id": post.UserID,
+	})
+	responsePost := response.NewPostResponse()
+	responsePost.ID = post.ID
+	responsePost.Title = post.Title
+	responsePost.Content = post.Content
+	responsePost.Slug = post.Slug
+	responsePost.Image = post.Image
+	responsePost.UserId = int(post.UserID)
+	return res.RowsAffected, &responsePost
 }
