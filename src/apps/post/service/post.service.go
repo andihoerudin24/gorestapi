@@ -11,6 +11,7 @@ type PostService interface {
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
 	FindById(id int) (*model.PostModel, error)
 	Update(id int, postModel model.PostModel) (int64, *response.PostResponse)
+	Delete(id int) error
 }
 
 type postService struct {
@@ -39,4 +40,9 @@ func (p *postService) FindById(id int) (*model.PostModel, error) {
 func (p *postService) Update(id int, postModel model.PostModel) (int64, *response.PostResponse) {
 	postUpdate, postResponse := p.repository.Update(id, postModel)
 	return postUpdate, postResponse
+}
+
+func (p *postService) Delete(id int) error {
+	postDelete := p.repository.Delete(id)
+	return postDelete
 }

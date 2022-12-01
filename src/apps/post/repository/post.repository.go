@@ -11,6 +11,7 @@ type PostRepository interface {
 	CreatePost(postModel model.PostModel) (*model.PostModel, error)
 	FindById(id int) (*model.PostModel, error)
 	Update(id int, post model.PostModel) (int64, *response.PostResponse)
+	Delete(id int) error
 }
 
 type postRepository struct {
@@ -32,7 +33,7 @@ func (p *postRepository) GetAllPost(perPage int64, Offset int64) ([]response.Pos
 
 	Offset = (Offset - 1) * perPage
 
-	rows, err := p.connection.Debug().Table("posts").Select("posts.id,posts.title,posts.content,posts.slug,posts.image,users.name,users.id as user_id,users.phone").Joins("INNER JOIN users on users.id = posts.user_id").Limit(int(perPage)).Offset(int(Offset)).Rows()
+	rows, err := p.connection.Debug().Table("posts").Select("posts.id,posts.title,posts.content,posts.slug,posts.image,users.name,users.id as user_id,users.phone").Joins("INNER JOIN users on users.id = posts.user_id").Where("users.deleted_at is null").Where("posts.deleted_at is null").Limit(int(perPage)).Offset(int(Offset)).Rows()
 	if err == nil {
 		for rows.Next() {
 			p.connection.ScanRows(rows, &responsePost)
@@ -75,4 +76,16 @@ func (p *postRepository) Update(id int, post model.PostModel) (int64, *response.
 	responsePost.Image = post.Image
 	responsePost.UserId = int(post.UserID)
 	return res.RowsAffected, &responsePost
+}
+
+func (p *postRepository) Delete(id int) error {
+	postModel := model.NewPostModel()
+	postModel.ID = id
+
+	if err := p.connection.Debug().Where("id = ?", id).First(&postModel).Error; err != nil {
+		return err
+	}
+	responseDelete := p.connection.Debug().Delete(&postModel)
+	return responseDelete.Error
+
 }

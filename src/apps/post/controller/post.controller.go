@@ -29,6 +29,7 @@ type PostController interface {
 	CreatePost(ctx *gin.Context)
 	FindById(ctx *gin.Context)
 	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 type postController struct {
@@ -207,6 +208,24 @@ func (p *postController) Update(ctx *gin.Context) {
 	newPostModel.Image = fmt.Sprintf("%v", newFileName)
 	_, postResponse := p.postService.Update(int(id), newPostModel)
 	response.ResponseFormatter(http.StatusOK, "Success Update Data", nil, postResponse)
+}
+
+func (p *postController) Delete(ctx *gin.Context) {
+	response := utils.Response{C: ctx}
+	postId, ErrId := strconv.Atoi(ctx.Param("id"))
+	if ErrId != nil {
+		response.ResponseFormatter(http.StatusNotFound, "error id post", ErrId, nil)
+		return
+	}
+
+	postDelete := p.postService.Delete(postId)
+	if postDelete != nil {
+		response.ResponseFormatter(http.StatusNotFound, "error delete data", fmt.Sprintf("%v", postDelete), nil)
+		return
+	}
+	response.ResponseFormatter(http.StatusOK, "success delete data", nil, gin.H{
+		"iduser": postId,
+	})
 }
 
 func upload(ctx *gin.Context) (interface{}, error) {

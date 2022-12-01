@@ -22,4 +22,5 @@ func PostRouter(router *gin.RouterGroup) {
 	router.GET("/:id", PostController.FindById)
 	router.POST("/create", PostController.CreatePost)
 	router.POST("/:id", PostController.Update)
+	router.DELETE("/:id", PostController.Delete)
 }
