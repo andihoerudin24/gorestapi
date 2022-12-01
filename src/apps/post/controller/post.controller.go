@@ -22,6 +22,7 @@ const UPLOADDIR = "postimage"
 const URLSTATIC = "/api/v1/post"
 
 var title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
+var images string
 
 type PostController interface {
 	GetAllPost(ctx *gin.Context)
@@ -48,6 +49,7 @@ func (p *postController) GetAllPost(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 
 	res, err, totalRows := p.postService.GetAllPost(int64(perPage), int64(page))
+
 	pagination, _ := utils.GetPaginationLinks(utils.PaginationParams{
 		Path:        "post/all",
 		TotalRows:   totalRows,
@@ -55,9 +57,27 @@ func (p *postController) GetAllPost(ctx *gin.Context) {
 		CurrentPage: int64(page),
 	})
 
+	var dataResponse []interface{}
+
+	for _, dataValue := range res {
+		if dataValue.Image != "" {
+			images = getimageurl() + dataValue.Image
+		} else {
+			images = ""
+		}
+		dataResponse = append(dataResponse, map[string]interface{}{
+			"id":      dataValue.ID,
+			"title":   dataValue.Title,
+			"content": dataValue.Content,
+			"slug":    dataValue.Slug,
+			"image":   images,
+			"user_id": dataValue.UserId,
+		})
+	}
+
 	if err == nil {
 		response.ResponseFormatter(http.StatusOK, "list data post", nil, gin.H{
-			"data":       res,
+			"data":       dataResponse,
 			"pagination": pagination,
 		})
 		return
@@ -95,9 +115,8 @@ func (p *postController) CreatePost(ctx *gin.Context) {
 	dataPost.UserID = uint(postValidate.UserId)
 	resultInsert, err := p.postService.CreatePost(dataPost)
 
-	var images string
 	if resultInsert.Image != "" {
-		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + resultInsert.Image
+		images = getimageurl() + resultInsert.Image
 	} else {
 		images = ""
 	}
@@ -131,10 +150,8 @@ func (p *postController) FindById(ctx *gin.Context) {
 		return
 	}
 
-	var images string
-
 	if responseData.Image != "" {
-		images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + responseData.Image
+		images = getimageurl() + responseData.Image
 	} else {
 		images = ""
 	}
@@ -209,4 +226,8 @@ func upload(ctx *gin.Context) (interface{}, error) {
 		}
 	}
 	return newFilename, nil
+}
+
+func getimageurl() string {
+	return os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/"
 }
