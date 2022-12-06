@@ -2,6 +2,8 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	redis2 "github.com/go-redis/redis/v9"
+	"gorestapi/cache"
 	"gorestapi/config"
 	"gorestapi/src/apps/post/controller"
 	"gorestapi/src/apps/post/repository"
@@ -10,10 +12,13 @@ import (
 )
 
 var (
+	redis          *redis2.Client
 	db             = config.SetUp()
 	PostRepository = repository.NewPostRepository(db)
 	PostService    = service.NewPostService(PostRepository)
-	PostController = controller.NewPostController(PostService)
+	InitRedis      = config.InitRedis()
+	redisCache     = cache.NewRedisCache(InitRedis)
+	PostController = controller.NewPostController(PostService, redisCache)
 )
 
 func PostRouter(router *gin.RouterGroup) {

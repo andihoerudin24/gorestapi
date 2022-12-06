@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorestapi/cache"
 	"gorestapi/src/apps/post/model"
 	postResponse "gorestapi/src/apps/post/response"
 	"gorestapi/src/apps/post/service"
@@ -21,8 +23,10 @@ import (
 const UPLOADDIR = "postimage"
 const URLSTATIC = "/api/v1/post"
 
-var title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
-var images string
+var (
+	title, _ = regexp.Compile(`[^a-z A-Z/0-9]`)
+	images   string
+)
 
 type PostController interface {
 	GetAllPost(ctx *gin.Context)
@@ -34,10 +38,11 @@ type PostController interface {
 
 type postController struct {
 	postService service.PostService
+	redis       *cache.RedisCache
 }
 
-func NewPostController(postService service.PostService) *postController {
-	return &postController{postService: postService}
+func NewPostController(postService service.PostService, redis *cache.RedisCache) *postController {
+	return &postController{postService: postService, redis: redis}
 }
 
 func (p *postController) GetAllPost(ctx *gin.Context) {
@@ -75,6 +80,10 @@ func (p *postController) GetAllPost(ctx *gin.Context) {
 			"user_id": dataValue.UserId,
 		})
 	}
+
+	fmt.Println("dataResponse", dataResponse)
+	redisrespon := p.redis.Set(context.Background(), "posts", dataResponse, 0)
+	fmt.Println("redisrespon", redisrespon)
 
 	if err == nil {
 		response.ResponseFormatter(http.StatusOK, "list data post", nil, gin.H{

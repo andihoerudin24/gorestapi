@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/urfave/cli/v2"
 	"gorestapi/config"
 	"gorestapi/database/migration"
@@ -10,7 +11,9 @@ import (
 )
 
 var (
-	db = config.SetUp()
+	db    = config.SetUp()
+	ctx   = context.Background()
+	redis = config.InitRedis()
 )
 
 func InitialCommand() {
@@ -33,10 +36,15 @@ func InitialCommand() {
 
 func main() {
 	defer config.CloseDatabase(db)
+	defer redis.Close()
+
+	_, err := redis.Ping(ctx).Result()
+	if err != nil {
+		panic(err)
+	}
 
 	InitialCommand()
-
 	r := routes.Router()
-
 	r.Run(os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT"))
+
 }
