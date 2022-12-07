@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"gorestapi/src/apps/user/model"
 	"gorm.io/gorm"
 )
@@ -26,9 +25,7 @@ func (db *userRepository) GetAllUser(perPage int64, offsets int64) (*[]model.Use
 	var userModel []model.UserModel
 	var count int64
 
-	errs := db.connection.Debug().Table("users").Count(&count).Error
-
-	fmt.Println("datacount", count)
+	errs := db.connection.Debug().Table("users").Where("deleted_at IS NULL").Count(&count).Error
 
 	if errs != nil {
 		return nil, 0

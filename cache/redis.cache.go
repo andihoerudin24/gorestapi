@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-redis/redis/v9"
 	"time"
 )
@@ -28,9 +29,11 @@ func (r *RedisCache) Set(ctx context.Context, key string, value interface{}, dur
 }
 
 func (r *RedisCache) Get(ctx context.Context, key string) (interface{}, error) {
+	var dataredis interface{}
 	valueRedis, ErrorRedis := r.redis.Get(ctx, key).Result()
 	if ErrorRedis != nil {
 		return nil, ErrorRedis
 	}
-	return valueRedis, nil
+	json.Unmarshal([]byte(fmt.Sprintf("%v", valueRedis)), &dataredis)
+	return dataredis, nil
 }

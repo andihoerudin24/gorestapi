@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -81,9 +80,9 @@ func (p *postController) GetAllPost(ctx *gin.Context) {
 		})
 	}
 
-	fmt.Println("dataResponse", dataResponse)
-	redisrespon := p.redis.Set(context.Background(), "posts", dataResponse, 0)
-	fmt.Println("redisrespon", redisrespon)
+	//fmt.Println("dataResponse", dataResponse)
+	//redisrespon := p.redis.Set(context.Background(), "posts", dataResponse, 0)
+	//fmt.Println("redisrespon", redisrespon)
 
 	if err == nil {
 		response.ResponseFormatter(http.StatusOK, "list data post", nil, gin.H{

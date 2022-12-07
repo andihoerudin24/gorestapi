@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorestapi/cache"
 	"gorestapi/config"
 	"gorestapi/src/apps/user/controller"
 	"gorestapi/src/apps/user/repository"
@@ -13,7 +14,9 @@ var (
 	db             = config.SetUp()
 	UserRepository = repository.NewUserRepository(db)
 	UserServices   = service.NewUserService(UserRepository)
-	UserController = controller.NewUserController(UserServices)
+	InitRedis      = config.InitRedis()
+	RedisCache     = cache.NewRedisCache(InitRedis)
+	UserController = controller.NewUserController(UserServices, RedisCache)
 )
 
 func UserRouter(router *gin.RouterGroup) {

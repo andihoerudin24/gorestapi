@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"context"
 	_ "embed"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorestapi/cache"
 	"gorestapi/src/apps/user/model"
 	"gorestapi/src/apps/user/service"
 	"gorestapi/src/apps/user/validation"
@@ -22,6 +24,8 @@ import (
 const UPLOADDIR = "user"
 const URLSTATIC = "/api/v1/user"
 
+var ctxBaground = context.Background()
+
 type UserController interface {
 	GetAllUser(ctx *gin.Context)
 	CreateUser(ctx *gin.Context)
@@ -32,56 +36,62 @@ type UserController interface {
 
 type userController struct {
 	services service.UserService
+	redis    *cache.RedisCache
 }
 
-func NewUserController(services service.UserService) *userController {
-	return &userController{services: services}
+func NewUserController(services service.UserService, redis *cache.RedisCache) *userController {
+	return &userController{services: services, redis: redis}
 }
 
 func (u *userController) GetAllUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 	var pagination interface{}
+	var dataresponse []interface{}
+	var saveredis []interface{}
+	var images string
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	if page <= 0 {
 		page = 1
 	}
 	perPage := 5
-	DataUser, totalrows := u.services.GetAllUser(int64(perPage), int64(page))
+	DataRedis, _ := u.redis.Get(ctxBaground, "users_"+strconv.Itoa(page))
+	if DataRedis == nil {
+		DataUser, totalrows := u.services.GetAllUser(int64(perPage), int64(page))
+		pagination, _ = utils.GetPaginationLinks(utils.PaginationParams{
+			Path:        "user/all",
+			TotalRows:   totalrows,
+			PerPage:     int64(perPage),
+			CurrentPage: int64(page),
+		})
 
-	pagination, _ = utils.GetPaginationLinks(utils.PaginationParams{
-		Path:        "user/all",
-		TotalRows:   totalrows,
-		PerPage:     int64(perPage),
-		CurrentPage: int64(page),
-	})
-
-	if len(*DataUser) == 0 {
-		response.ResponseFormatter(http.StatusNotFound, "data not found", DataUser, nil)
+		if len(*DataUser) == 0 {
+			response.ResponseFormatter(http.StatusNotFound, "data not found", DataUser, nil)
+			return
+		}
+		for _, value := range *DataUser {
+			if value.Image != "" {
+				images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + value.Image
+			} else {
+				images = ""
+			}
+			dataresponse = append(dataresponse, map[string]interface{}{
+				"id":      value.ID,
+				"name":    value.Name,
+				"phone":   value.Phone,
+				"email":   value.Email,
+				"address": value.Address,
+				"image":   images,
+			})
+		}
+		saveredis = append(saveredis, map[string]interface{}{
+			"data":       dataresponse,
+			"pagination": pagination,
+		})
+		u.redis.Set(ctxBaground, "users_"+strconv.Itoa(page), saveredis, 0)
+		response.ResponseFormatter(http.StatusOK, "List User", nil, saveredis)
 		return
 	}
-
-	var dataresponse []interface{}
-	var images string
-
-	for _, value := range *DataUser {
-		if value.Image != "" {
-			images = os.Getenv("APP_HTTP") + os.Getenv("APP_URL") + ":" + os.Getenv("APP_PORT") + URLSTATIC + "/" + os.Getenv("UPLOADDIR") + "/" + UPLOADDIR + "/" + value.Image
-		} else {
-			images = ""
-		}
-		dataresponse = append(dataresponse, map[string]interface{}{
-			"id":      value.ID,
-			"name":    value.Name,
-			"phone":   value.Phone,
-			"email":   value.Email,
-			"address": value.Address,
-			"image":   images,
-		})
-	}
-	response.ResponseFormatter(http.StatusOK, "List User", nil, gin.H{
-		"data":       dataresponse,
-		"pagination": pagination,
-	})
+	response.ResponseFormatter(http.StatusOK, "List User", nil, DataRedis)
 }
 
 func (u *userController) CreateUser(ctx *gin.Context) {
