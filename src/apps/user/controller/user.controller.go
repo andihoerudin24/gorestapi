@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const UPLOADDIR = "user"
@@ -47,7 +48,7 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 	response := utils.Response{C: ctx}
 	var pagination interface{}
 	var dataresponse []interface{}
-	var saveredis []interface{}
+	var saveredis interface{}
 	var images string
 	page, _ := strconv.Atoi(ctx.Query("page"))
 	if page <= 0 {
@@ -83,11 +84,11 @@ func (u *userController) GetAllUser(ctx *gin.Context) {
 				"image":   images,
 			})
 		}
-		saveredis = append(saveredis, map[string]interface{}{
+		saveredis = map[string]interface{}{
 			"data":       dataresponse,
 			"pagination": pagination,
-		})
-		u.redis.Set(ctxBaground, "users_"+strconv.Itoa(page), saveredis, 0)
+		}
+		u.redis.Set(ctxBaground, "users_"+strconv.Itoa(page), saveredis, 1*time.Minute)
 		response.ResponseFormatter(http.StatusOK, "List User", nil, saveredis)
 		return
 	}
@@ -158,6 +159,7 @@ func (u *userController) FindById(ctx *gin.Context) {
 	} else {
 		images = ""
 	}
+
 	dataresponse := map[string]interface{}{
 		"id":      responses.ID,
 		"email":   responses.Email,
