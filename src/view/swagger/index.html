@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title>API's Swagger</title>
+    <link href="public/swagger/style.css" rel="stylesheet">
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="public/swagger/jquery-2.1.4.min.js"></script>
+<script src="public/swagger/swagger-bundle.js"></script>
+<script type="application/javascript">
+    const ui = SwaggerUIBundle({
+        url: "public/swagger/swagger.yaml",
+        dom_id: '#swagger-ui',
+    });
+</script>
+</body>
+</html>
